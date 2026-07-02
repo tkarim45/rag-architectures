@@ -1,56 +1,96 @@
-"""Chunking-strategy RAG pipeline — same dense retrieve → generate, over a configurable chunk index.
+"""Chunking-strategy RAG pipeline.
 
-`sentence_window` returns neighbours, `parent_child` returns the whole parent doc, `contextual`
-prepends an LLM context blurb before embedding. The retriever never changes; the index granularity
-does.
+Thesis: retrieval quality is often decided at *index* time, not query time. The same dense
+retriever over the same corpus swings materially depending on how the corpus was chunked. So this
+pipeline is naive RAG with one substitution — the index it reads was built by a named chunking
+strategy (`sentence_window`, `parent_child`, `contextual`, or any other core `CHUNKER_REGISTRY`
+name). The online path never changes; the benchmark instantiates one pipeline per strategy and
+compares them on identical queries.
 
-Three entrypoints:
-  * Pipeline.answer(query)   — standalone prod-style usage (builds its own index from common).
-  * run(query, bundle, k)    — benchmark adapter over the default chunker (Config.chunker).
-  * run_for(chunker)         — factory: a run-closure bound to a specific chunker's index, tagging
-                               meta with which chunker it used (the benchmark calls this per variant).
+The offline/online split mirrors production: index construction (chunk → embed → store) happens
+once via `runtime.build_index` — or is injected pre-built by the benchmark so all strategies share
+identical embedder/LLM wiring — and the query path only reads.
 """
 from __future__ import annotations
 
-from common import generate
-from common.corpus import docs as corpus_docs
-from common.index import CHUNKERS, Index
-from common.retrieval import context, to_docs
+from core import (AnswerGenerator, CHUNKER_REGISTRY, ConfigurationError, ContextBlock,
+                  ContextBuilder, CorpusIndex, PipelineResult, Query, RetrievalResult, Runtime)
 
 from .config import Config
-from .retriever import retrieve
+from .retriever import DenseStrategyRetriever
 
 
 class Pipeline:
-    def __init__(self, cfg: Config | None = None):
-        self.cfg = cfg or Config()
-        self._index = None
+    """One chunking strategy, benchmark-comparable.
 
-    def _index_(self):
-        if self._index is None:                         # offline indexing, lazily, once
-            self._index = Index(CHUNKERS[self.cfg.chunker](corpus_docs()))
+    `retrieve()` is the benchmark surface (no generation); `answer()` is the standalone
+    entrypoint (retrieve + grounded generation).
+    """
+
+    def __init__(self, runtime: Runtime, config: Config | None = None, *,
+                 index: CorpusIndex | None = None,
+                 strategy: str = "sentence_window") -> None:
+        """`index` lets the benchmark inject a pre-built index so every architecture shares
+        identical offline artifacts; when omitted, the index is built lazily from
+        `runtime.corpus` on first use (contextual chunking spends its per-document LLM calls
+        at that moment, not at construction)."""
+        if strategy not in CHUNKER_REGISTRY:
+            raise ConfigurationError(
+                f"unknown chunking strategy {strategy!r}; known: {sorted(CHUNKER_REGISTRY)}")
+        if index is not None and index.strategy and index.strategy != strategy:
+            raise ConfigurationError(
+                f"injected index was built with strategy {index.strategy!r} but the pipeline "
+                f"was asked for {strategy!r} — the benchmark's comparison would be mislabeled")
+        self.runtime = runtime
+        self.config = config or Config()
+        self.strategy = strategy
+        self._index = index
+        self._retriever: DenseStrategyRetriever | None = None
+        self._context_builder = ContextBuilder(max_passages=self.config.final_k,
+                                               max_chars=self.config.max_context_chars)
+        self._generator = AnswerGenerator(runtime.llm, tracer=runtime.tracer)
+
+    # ---- offline artifacts (lazy) --------------------------------------------------------
+
+    @property
+    def index(self) -> CorpusIndex:
+        if self._index is None:
+            self._index = self.runtime.build_index(
+                self.strategy, **self.config.chunker_kwargs(self.strategy))
         return self._index
 
-    def retrieve(self, query: str):
-        idx = self._index_()
-        cids = retrieve(query, idx, self.cfg.top_k)
-        return to_docs(cids, idx), context(cids, idx, self.cfg.return_n)
+    @property
+    def retriever(self) -> DenseStrategyRetriever:
+        if self._retriever is None:
+            self._retriever = DenseStrategyRetriever(
+                index=self.index, config=self.config, tracer=self.runtime.tracer)
+        return self._retriever
 
-    def answer(self, query: str) -> str:
-        _, ctx = self.retrieve(query)
-        return generate.answer(query, ctx)
+    # ---- online path ---------------------------------------------------------------------
 
+    def retrieve(self, question: str) -> tuple[RetrievalResult, ContextBlock]:
+        """Online retrieval only — what the benchmark calls and scores."""
+        query = Query(text=question, top_k=self.config.top_k)
+        with self.runtime.tracer.span("chunking.pipeline", strategy=self.strategy) as span:
+            retrieval = self.retriever.retrieve(query)
+            with self.runtime.tracer.span("chunking.build_context",
+                                          candidates=len(retrieval.chunks)) as ctx_span:
+                context = self._context_builder.build(retrieval.chunks)
+                ctx_span.set("passages", len(context.chunk_ids))
+                ctx_span.set("truncated", context.truncated)
+            # extend the retriever's story with what actually reached the generator — this is
+            # where parent_child's dedup-and-token-cost mechanics become measurable
+            retrieval.diagnostics.update({
+                "context_passages": len(context.chunk_ids),
+                "context_chars": len(context.text),
+                "context_truncated": context.truncated,
+            })
+            span.set("docs", len(retrieval.doc_ids))
+        return retrieval, context
 
-def run(query, bundle, k: int = 5):
-    idx = bundle.indexes[Config.chunker]
-    cids = retrieve(query, idx, max(k, 8))
-    return to_docs(cids, idx), context(cids, idx, Config.return_n), {"chunker": Config.chunker}
-
-
-def run_for(chunker: str):
-    """Build a `run(query, bundle, k)` closure bound to one chunker's pre-built index in the bundle."""
-    def run(query, bundle, k: int = 5):
-        idx = bundle.indexes[chunker]
-        cids = retrieve(query, idx, max(k, 8))
-        return to_docs(cids, idx), context(cids, idx, Config.return_n), {"chunker": chunker}
-    return run
+    def answer(self, question: str) -> PipelineResult:
+        """retrieve() + grounded generation — the standalone entrypoint."""
+        retrieval, context = self.retrieve(question)
+        answer = self._generator.generate(question, context)
+        return PipelineResult(query=retrieval.query, retrieval=retrieval, context=context,
+                              answer=answer, diagnostics={"strategy": self.strategy})

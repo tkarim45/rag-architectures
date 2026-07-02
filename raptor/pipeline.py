@@ -1,37 +1,66 @@
-"""RAPTOR pipeline — orchestrates build (offline tree) → retrieve → generate.
+"""RAPTOR pipeline — the package's contract surface.
 
-Two entrypoints:
-  * Pipeline.answer(query)   — standalone prod-style usage (builds its own tree from common).
-  * run(query, bundle, k)    — benchmark adapter (reuses the shared, pre-built tree in the bundle).
+Offline/online split:
+  * OFFLINE — `build_tree` (see `tree.py`) embeds leaves and recursively clusters + summarizes.
+    The benchmark calls it once and injects the tree into every Pipeline; standalone usage lets
+    the pipeline build it lazily from `runtime.corpus` on first query.
+  * ONLINE  — collapsed-tree scoring over all nodes (see `retriever.py`), context assembly via
+    `core.ContextBuilder` (whose display-text dedup collapses the per-doc synthetic chunks back
+    into unique passages), and answer generation via `core.AnswerGenerator`.
 """
 from __future__ import annotations
 
-from common import generate
-from common.corpus import docs as corpus_docs
+from core import (AnswerGenerator, ContextBlock, ContextBuilder, PipelineResult,
+                  RetrievalResult, Runtime)
 
 from .config import Config
-from .retriever import retrieve
-from .tree import build
+from .retriever import CollapsedTreeRetriever
+from .tree import RaptorTree, build_tree
 
 
 class Pipeline:
-    def __init__(self, cfg: Config | None = None):
-        self.cfg = cfg or Config()
-        self._raptor = None
+    """RAPTOR retrieve/answer pipeline over a (possibly injected) RaptorTree."""
 
-    def _raptor_(self):
-        if self._raptor is None:                        # offline tree build, lazily, once
-            self._raptor = build(corpus_docs(), self.cfg.n_clusters)
-        return self._raptor
+    def __init__(self, runtime: Runtime, config: Config | None = None, *,
+                 tree: RaptorTree | None = None) -> None:
+        """`tree` is the benchmark injection seam: pass a prebuilt tree so all pipelines share
+        one offline artifact. When omitted, the tree is built lazily from `runtime.corpus` on
+        the first retrieve — never at construction, so importing/instantiating stays cheap."""
+        self.runtime = runtime
+        self.config = config or Config()
+        self._tree = tree
+        self._context_builder = ContextBuilder(
+            max_passages=self.config.max_context_passages,
+            max_chars=self.config.max_context_tokens * 4)     # same chars≈tokens×4 estimate
+        self._generator = AnswerGenerator(
+            llm=runtime.llm, max_tokens=self.config.answer_max_tokens, tracer=runtime.tracer)
 
-    def retrieve(self, query: str):
-        return retrieve(query, self._raptor_(), self.cfg.top_k)
+    @property
+    def tree(self) -> RaptorTree:
+        """The offline artifact, built on first access when not injected."""
+        if self._tree is None:
+            self._tree = build_tree(self.runtime, self.runtime.corpus, self.config)
+        return self._tree
 
-    def answer(self, query: str) -> str:
-        _, ctx = self.retrieve(query)
-        return generate.answer(query, ctx)
+    def retrieve(self, question: str) -> tuple[RetrievalResult, ContextBlock]:
+        """Online retrieval only — what the benchmark calls. No answer generation."""
+        with self.runtime.tracer.span("raptor.pipeline.retrieve"):
+            retriever = CollapsedTreeRetriever(
+                tree=self.tree, embedder=self.runtime.embedder,
+                config=self.config, tracer=self.runtime.tracer)
+            result = retriever.retrieve(question)
+            context = self._context_builder.build(result.chunks)
+            result.diagnostics["context_passages"] = len(context.chunk_ids)
+            result.diagnostics["context_truncated"] = context.truncated
+        return result, context
 
-
-def run(query, bundle, k: int = 5):
-    docs, ctx = retrieve(query, bundle.raptor, k)
-    return docs, ctx, {}
+    def answer(self, question: str) -> PipelineResult:
+        """retrieve() + AnswerGenerator — the standalone entrypoint."""
+        with self.runtime.tracer.span("raptor.pipeline.answer"):
+            retrieval, context = self.retrieve(question)
+            generated = self._generator.generate(question, context)
+        return PipelineResult(
+            query=retrieval.query, retrieval=retrieval, context=context, answer=generated,
+            diagnostics={"architecture": "raptor",
+                         "tree_shape": self.tree.describe(),
+                         **retrieval.diagnostics})

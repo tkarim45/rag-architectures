@@ -1,41 +1,71 @@
-"""Hybrid RAG pipeline — orchestrates retrieve → generate.
+"""Hybrid RAG pipeline — orchestrates (dense ∥ sparse) → fuse → context → generate.
 
-Two entrypoints:
-  * Pipeline.answer(query)   — standalone prod-style usage (builds its own index from common).
-  * run(query, bundle, k)    — benchmark adapter (reuses the shared, pre-built index in the bundle).
+The pipeline owns lifecycle and wiring only; retrieval logic lives in ``HybridRetriever``. Two
+entrypoints per the package contract:
+
+* ``retrieve(question)`` — the online retrieval path the benchmark calls; no LLM generation.
+* ``answer(question)``   — retrieve + ``core.AnswerGenerator``; the standalone entrypoint.
+
+The index is injectable so the benchmark can build one ``CorpusIndex`` per chunking strategy and
+share it across all architectures (identical offline artifacts ⇒ honest comparison). When omitted,
+the pipeline lazily builds its own from ``runtime.corpus`` on first use — lazily so constructing a
+Pipeline stays cheap and imports never trigger embedding work.
 """
 from __future__ import annotations
 
-from common import generate
-from common.corpus import docs as corpus_docs
-from common.index import CHUNKERS, Index
-from common.retrieval import context, to_docs
+from core import (AnswerGenerator, ContextBlock, ContextBuilder, CorpusIndex, PipelineResult,
+                  Query, RetrievalResult, Runtime)
 
 from .config import Config
-from .retriever import retrieve
+from .retriever import HybridRetriever
 
 
 class Pipeline:
-    def __init__(self, cfg: Config | None = None):
-        self.cfg = cfg or Config()
-        self._index = None
+    """Hybrid retrieval RAG over a shared corpus index."""
 
-    def _index_(self):
-        if self._index is None:                         # offline indexing, lazily, once
-            self._index = Index(CHUNKERS[self.cfg.chunker](corpus_docs()))
+    def __init__(self, runtime: Runtime, config: Config | None = None, *,
+                 index: CorpusIndex | None = None) -> None:
+        self.runtime = runtime
+        self.config = config or Config()
+        self._index = index
+        self._retriever: HybridRetriever | None = None
+        self._context_builder = ContextBuilder(max_passages=self.config.max_context_passages,
+                                               max_chars=self.config.max_context_chars)
+        self._generator = AnswerGenerator(runtime.llm, tracer=runtime.tracer)
+
+    # ---- lazy offline artifacts ----------------------------------------------------------
+
+    @property
+    def index(self) -> CorpusIndex:
+        if self._index is None:
+            self._index = self.runtime.build_index(self.config.chunker)
         return self._index
 
-    def retrieve(self, query: str):
-        idx = self._index_()
-        cids = retrieve(query, idx, self.cfg.top_k)
-        return to_docs(cids, idx), context(cids, idx, self.cfg.return_n)
+    @property
+    def retriever(self) -> HybridRetriever:
+        if self._retriever is None:
+            self._retriever = HybridRetriever(index=self.index, config=self.config,
+                                              tracer=self.runtime.tracer)
+        return self._retriever
 
-    def answer(self, query: str) -> str:
-        _, ctx = self.retrieve(query)
-        return generate.answer(query, ctx)
+    # ---- online path ---------------------------------------------------------------------
 
+    def retrieve(self, question: str) -> tuple[RetrievalResult, ContextBlock]:
+        """Online retrieval only — what the benchmark scores. No answer generation."""
+        with self.runtime.tracer.span("hybrid.retrieve", fusion=self.config.fusion) as span:
+            query = Query(text=question, top_k=self.config.final_k)
+            result = self.retriever.retrieve(query)
+            with self.runtime.tracer.span("hybrid.context"):
+                context = self._context_builder.build(result.chunks)
+            span.set("docs", len(result.doc_ids))
+            span.set("truncated", context.truncated)
+        return result, context
 
-def run(query, bundle, k: int = 5):
-    idx = bundle.indexes[Config.chunker]
-    cids = retrieve(query, idx, max(k, 8))
-    return to_docs(cids, idx), context(cids, idx, Config.return_n), {}
+    def answer(self, question: str) -> PipelineResult:
+        """retrieve() + grounded generation — the standalone entrypoint."""
+        with self.runtime.tracer.span("hybrid.answer"):
+            retrieval, context = self.retrieve(question)
+            answer = self._generator.generate(question, context)
+        return PipelineResult(query=retrieval.query, retrieval=retrieval, context=context,
+                              answer=answer, diagnostics={"architecture": "hybrid",
+                                                          **retrieval.diagnostics})

@@ -1,41 +1,83 @@
-"""GraphRAG pipeline — orchestrates build → retrieve → generate.
+"""GraphRAG pipeline — the package's public entrypoint, wired to the framework contract.
 
-The two halves of GraphRAG are clearly split:
-  * OFFLINE (build, once): extract entities per doc and assemble the shared-entity doc-doc graph.
-  * ONLINE  (per query):   seed from query entities, BFS-traverse the graph, generate from context.
+Offline/online split, made explicit:
 
-Two entrypoints:
-  * Pipeline.answer(query)   — standalone prod-style usage (builds its own graph from common).
-  * run(query, bundle, k)    — benchmark adapter (reuses the shared, pre-built graph in the bundle).
+  * OFFLINE (once): `build_graph` extracts entities/relations per document, merges them into the
+    `KnowledgeGraph`, detects Louvain communities and writes their summaries. The benchmark builds
+    this once and injects it into every Pipeline; standalone callers get a lazy build on first use.
+  * ONLINE (per query): route → local traversal or global map-reduce → ranked provenance docs →
+    whole-doc chunks → context → (optionally) a grounded answer.
+
+Both heavyweight artifacts are injectable and lazy: `graph` (the knowledge graph) and `index`
+(a whole-document `CorpusIndex`, used purely to resolve doc ids into generator-ready chunks —
+GraphRAG never vector-searches it).
 """
 from __future__ import annotations
 
-from common import generate
-from common.corpus import docs as corpus_docs
+from core import (AnswerGenerator, ContextBlock, ContextBuilder, CorpusIndex, PipelineResult,
+                  RetrievalResult, Runtime)
 
 from .config import Config
-from .graph_builder import build
-from .retriever import retrieve
+from .graph import KnowledgeGraph, build_graph
+from .retriever import GraphRetriever
 
 
 class Pipeline:
-    def __init__(self, cfg: Config | None = None):
-        self.cfg = cfg or Config()
-        self._graph = None
+    """Standalone GraphRAG over the runtime's corpus. `retrieve` is what the benchmark scores;
+    `answer` adds grounded generation for interactive use."""
 
-    def _graph_(self):
-        if self._graph is None:                       # offline build, lazily, once
-            self._graph = build(corpus_docs())
+    def __init__(self, runtime: Runtime, config: Config | None = None, *,
+                 index: CorpusIndex | None = None, graph: KnowledgeGraph | None = None):
+        self.runtime = runtime
+        self.config = config or Config()
+        self._index = index
+        self._graph = graph
+        self._retriever: GraphRetriever | None = None
+        self._context_builder = ContextBuilder(max_passages=self.config.max_context_passages,
+                                               max_chars=self.config.max_context_chars)
+        self._generator = AnswerGenerator(runtime.llm, tracer=runtime.tracer)
+
+    # ---- lazy offline artifacts ----------------------------------------------------------
+
+    @property
+    def graph(self) -> KnowledgeGraph:
+        """The knowledge graph; built from `runtime.corpus` on first use when not injected."""
+        if self._graph is None:
+            self._graph = build_graph(self.runtime, self.runtime.corpus, self.config)
         return self._graph
 
-    def retrieve(self, query: str):
-        return retrieve(query, self._graph_(), self.cfg.top_k, self.cfg.hops)
+    @property
+    def index(self) -> CorpusIndex:
+        """Whole-document index for doc-id → chunk resolution; built lazily when not injected."""
+        if self._index is None:
+            self._index = self.runtime.build_index("whole")
+        return self._index
 
-    def answer(self, query: str) -> str:
-        _, ctx = self.retrieve(query)
-        return generate.answer(query, ctx)
+    @property
+    def retriever(self) -> GraphRetriever:
+        if self._retriever is None:
+            self._retriever = GraphRetriever(llm=self.runtime.llm, graph=self.graph,
+                                             index=self.index, config=self.config,
+                                             tracer=self.runtime.tracer)
+        return self._retriever
 
+    # ---- online path ----------------------------------------------------------------------
 
-def run(query, bundle, k: int = 5):
-    docs, ctx = retrieve(query, bundle.graph, k)
-    return docs, ctx, {}
+    def retrieve(self, question: str) -> tuple[RetrievalResult, ContextBlock]:
+        """Retrieval only — no generation. This is the benchmark's call."""
+        with self.runtime.tracer.span("graphrag.pipeline.retrieve") as span:
+            retrieval = self.retriever.retrieve(question)
+            context = self._context_builder.build(retrieval.chunks)
+            span.set("docs", len(retrieval.doc_ids))
+            span.set("context_chars", len(context.text))
+            span.set("truncated", context.truncated)
+        return retrieval, context
+
+    def answer(self, question: str) -> PipelineResult:
+        """retrieve() + grounded generation — the standalone entrypoint."""
+        with self.runtime.tracer.span("graphrag.pipeline.answer") as span:
+            retrieval, context = self.retrieve(question)
+            generated = self._generator.generate(question, context)
+            span.set("abstained", generated.abstained)
+        return PipelineResult(query=retrieval.query, retrieval=retrieval, context=context,
+                              answer=generated, diagnostics=dict(retrieval.diagnostics))

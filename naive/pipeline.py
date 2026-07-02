@@ -1,41 +1,62 @@
-"""Naive RAG pipeline — orchestrates retrieve → generate.
+"""The naive dense-RAG pipeline: retrieve top-k → stuff context → generate.
 
-Two entrypoints:
-  * Pipeline.answer(query)   — standalone prod-style usage (builds its own index from common).
-  * run(query, bundle, k)    — benchmark adapter (reuses the shared, pre-built index in the bundle).
+This is the baseline every other architecture in this repo is measured against. It makes zero
+online decisions — no query rewriting, no fusion, no grading, no second pass — so any score another
+architecture posts above (or below) this one is attributable to its added machinery, not to a
+different corpus, chunker, embedder, or generator. Those are all shared via the injected
+``CorpusIndex`` and ``Runtime``.
 """
 from __future__ import annotations
 
-from common import generate
-from common.corpus import docs as corpus_docs
-from common.index import CHUNKERS, Index
-from common.retrieval import context, to_docs
+from core import (AnswerGenerator, ContextBlock, ContextBuilder, CorpusIndex, PipelineResult,
+                  Query, RetrievalResult, Runtime)
 
-from .config import Config
-from .retriever import retrieve
+from .config import NaiveConfig
+from .retriever import DenseRetriever
 
 
 class Pipeline:
-    def __init__(self, cfg: Config | None = None):
-        self.cfg = cfg or Config()
-        self._index = None
+    """Canonical dense RAG: embed query → top-k cosine → context → grounded answer."""
 
-    def _index_(self):
-        if self._index is None:                         # offline indexing, lazily, once
-            self._index = Index(CHUNKERS[self.cfg.chunker](corpus_docs()))
+    def __init__(self, runtime: Runtime, config: NaiveConfig | None = None, *,
+                 index: CorpusIndex | None = None) -> None:
+        """The benchmark injects a shared ``index`` so every architecture retrieves against
+        identical offline artifacts; standalone callers omit it and the pipeline builds one
+        lazily from ``runtime.corpus`` on first use (index builds are expensive — don't pay
+        for them at construction time)."""
+        self.runtime = runtime
+        self.config = config or NaiveConfig()
+        self._index = index
+        self._context_builder = ContextBuilder(
+            max_passages=self.config.context_max_passages,
+            max_chars=self.config.context_max_chars)
+        self._generator = AnswerGenerator(runtime.llm, tracer=runtime.tracer)
+
+    @property
+    def index(self) -> CorpusIndex:
+        if self._index is None:
+            self._index = self.runtime.build_index(self.config.chunker)
         return self._index
 
-    def retrieve(self, query: str):
-        idx = self._index_()
-        cids = retrieve(query, idx, self.cfg.top_k)
-        return to_docs(cids, idx), context(cids, idx, self.cfg.return_n)
+    def retrieve(self, question: str) -> tuple[RetrievalResult, ContextBlock]:
+        """Online retrieval path only — what the benchmark scores. No LLM call happens here;
+        naive RAG spends its entire online budget on one embedding lookup."""
+        with self.runtime.tracer.span("naive.retrieve", top_k=self.config.top_k) as span:
+            retriever = DenseRetriever(index=self.index, tracer=self.runtime.tracer)
+            result = retriever.retrieve(Query(text=question, top_k=self.config.top_k))
+            with self.runtime.tracer.span("naive.build_context"):
+                context = self._context_builder.build(result.chunks)
+            result.diagnostics["context_truncated"] = context.truncated
+            result.diagnostics["context_passages"] = len(context.chunk_ids)
+            span.set("docs", len(result.doc_ids))
+        return result, context
 
-    def answer(self, query: str) -> str:
-        _, ctx = self.retrieve(query)
-        return generate.answer(query, ctx)
-
-
-def run(query, bundle, k: int = 5):
-    idx = bundle.indexes[Config.chunker]
-    cids = retrieve(query, idx, max(k, 8))
-    return to_docs(cids, idx), context(cids, idx, Config.return_n), {}
+    def answer(self, question: str) -> PipelineResult:
+        """Standalone entrypoint: retrieve + grounded generation. Generation is shared core
+        machinery (strict answer-from-context-or-abstain), so a wrong answer from this pipeline
+        is a retrieval failure by construction."""
+        with self.runtime.tracer.span("naive.pipeline"):
+            retrieval, context = self.retrieve(question)
+            answer = self._generator.generate(question, context)
+        return PipelineResult(query=retrieval.query, retrieval=retrieval, context=context,
+                              answer=answer, diagnostics=dict(retrieval.diagnostics))

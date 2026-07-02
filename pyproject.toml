@@ -29,8 +29,8 @@ dev = ["pytest>=7"]
 rag-bench = "cli:main"
 
 [tool.hatch.build.targets.wheel]
-# flat layout: shared infra in common/, one top-level package per RAG architecture
-packages = ["common", "naive", "sparse", "hybrid", "rerank", "multi_query", "rag_fusion",
+# flat layout: shared framework in core/, one top-level package per RAG architecture
+packages = ["core", "naive", "sparse", "hybrid", "rerank", "multi_query", "rag_fusion",
             "hyde", "chunking", "graphrag", "raptor", "corrective", "adaptive", "agentic"]
 
 [tool.hatch.build.targets.wheel.force-include]
