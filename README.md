@@ -1,6 +1,6 @@
 # rag-architectures
 
-**13 RAG architectures, one corpus, one labeled eval set — engineered as a real framework and
+**13 RAG architectures, one corpus, one labeled eval set, engineered as a real framework and
 measured side by side.** Each architecture is a self-contained, production-style package built on a
 shared core (typed domain models, pluggable LLM/embedding/vector-store backends, retry + caching,
 span tracing, structured-output repair). They all run over the same documents, embeddings and LLM,
@@ -22,11 +22,11 @@ flow grounded in the source paper, component table, failure modes, tuning guide)
 
 | family | package | design | paper |
 |---|---|---|---|
-| **Retrieval** | [`naive/`](naive) | dense top-k, one pass — the baseline | Lewis et al. 2020 |
+| **Retrieval** | [`naive/`](naive) | dense top-k, one pass, the baseline | Lewis et al. 2020 |
 | | [`sparse/`](sparse) | BM25 with an explicit, configurable analysis pipeline | Robertson & Zaragoza 2009 |
 | | [`hybrid/`](hybrid) | dense ∥ BM25 → RRF or normalized weighted fusion | Cormack et al. 2009 |
 | | [`rerank/`](rerank) | high-recall candidates → cross-encoder precision funnel | Nogueira & Cho 2019 |
-| **Query transform** | [`multi_query/`](multi_query) | LLM rephrasings → parallel retrieval → interleaved union | — |
+| **Query transform** | [`multi_query/`](multi_query) | LLM rephrasings → parallel retrieval → interleaved union |, |
 | | [`rag_fusion/`](rag_fusion) | LLM broadenings → Reciprocal Rank Fusion consensus | Rackauckas 2024 |
 | | [`hyde/`](hyde) | embed hypothetical answers, mix with the query vector | Gao et al. 2022 |
 | **Indexing** | [`chunking/`](chunking) | strategy study: sentence-window / parent-child / contextual | Anthropic 2024 |
@@ -67,7 +67,7 @@ core/
 Design rules the packages obey:
 
 - **Dependency injection everywhere.** Packages never construct backends; they receive a `Runtime`.
-  `Runtime.for_testing()` swaps in `FakeLLM` + `HashingEmbedder` + NumPy store — the entire
+  `Runtime.for_testing()` swaps in `FakeLLM` + `HashingEmbedder` + NumPy store, the entire
   framework (all 13 architectures) runs offline in the test suite.
 - **No cross-architecture imports.** Corrective builds its own hybrid fallback from core
   primitives; adaptive builds its own iterative chain. Every package is independently readable
@@ -86,7 +86,7 @@ Design rules the packages obey:
 A **fully fictional, interlinked knowledge base** (14 docs about invented companies/people/
 products) + **12 labeled questions** (single- and multi-hop), each with gold doc ids and a
 reference answer. Fictional on purpose: the answers can't be in any model's training data, so a
-method only scores if it actually *retrieves* the right docs — this measures RAG, not
+method only scores if it actually *retrieves* the right docs, this measures RAG, not
 memorization. Multi-hop questions ("who founded the company behind the database Quorrel uses?")
 require chaining across documents, which is where architectures separate.
 
@@ -100,7 +100,7 @@ The architecture designs preserve the mechanisms behind these results; re-run `r
 reproduce numbers on the current code. One full Bedrock run (Claude Haiku 4.5), 12 questions:
 
 - **Multi-hop is the discriminator, and rephrasing doesn't solve it.** Query-transform methods
-  (`multi_query`, `rag_fusion`, `hyde`) and the `naive` baseline scored **0% on multi-hop** — no
+  (`multi_query`, `rag_fusion`, `hyde`) and the `naive` baseline scored **0% on multi-hop**, no
   rephrasing of "who founded the company behind X" resembles the *founder* document. Multi-hop
   needs **structure or iteration**, not lexical breadth.
 - **The winners add a second mechanism**: follow-up searches (`agentic`, 83%/50% multi-hop),

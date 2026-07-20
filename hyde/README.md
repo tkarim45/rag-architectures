@@ -1,4 +1,4 @@
-# HyDE — Hypothetical Document Embeddings
+# HyDE: Hypothetical Document Embeddings
 
 Zero-shot dense retrieval that sidesteps the query→document vocabulary gap: instead of embedding
 the user's question, have the LLM **write the document it wishes existed**, embed *that*, and
@@ -14,7 +14,7 @@ Embedding models are trained mostly on text→text similarity, so mapping a shor
 mapping two passages near each other. HyDE converts the hard task into the easy one:
 
 1. The LLM writes `n_hypotheses` short **hypothetical documents** that would answer the question.
-   Invented facts are fine — the hypothesis is never shown to anyone; only its vocabulary and
+   Invented facts are fine, the hypothesis is never shown to anyone; only its vocabulary and
    shape matter.
 2. Each hypothesis is embedded.
 3. The hypothesis vectors are averaged and blended with the *real* query vector at
@@ -25,7 +25,7 @@ mapping two passages near each other. HyDE converts the hard task into the easy 
 ### The `query_weight` tradeoff
 
 The paper's InstructGPT + Contriever setup averages the query vector together with the hypothesis
-vectors; we expose that as a dial. `query_weight = 0.0` is paper-pure HyDE — maximal vocabulary
+vectors; we expose that as a dial. `query_weight = 0.0` is paper-pure HyDE, maximal vocabulary
 transfer, but the search inherits **hallucinated-entity drift**: if the LLM invents "Nordwave
 Analytics" into the hypothesis, the probe drifts toward whatever in the corpus resembles that
 invention. `query_weight = 1.0` degenerates to naive dense retrieval. The default `0.25` keeps
@@ -77,7 +77,7 @@ rule routes it deterministically.
 ## Honest finding from this repo's benchmark
 
 **HyDE scored 0% on multi-hop questions.** A hypothetical *answer* paragraph still cannot resemble
-a **bridge document** that shares no vocabulary with the question — if answering requires first
+a **bridge document** that shares no vocabulary with the question, if answering requires first
 finding "X works at Y" and then "Y is headquartered in Z", no single hypothesis embeds near the
 intermediate document. HyDE fixes **vocabulary mismatch**, not **structural hops**; for multi-hop,
 reach for iterative/structural architectures (`agentic`, `raptor`) instead.
@@ -86,7 +86,7 @@ reach for iterative/structural architectures (`agentic`, `raptor`) instead.
 
 | File | Role |
 |---|---|
-| `config.py` | Frozen `Config` dataclass — every tunable. |
+| `config.py` | Frozen `Config` dataclass, every tunable. |
 | `prompts.py` | The hypothesis prompt (all LLM touchpoints). |
 | `hypothesis.py` | n independent LLM calls → `list[str]` hypotheses. |
 | `retriever.py` | Vector mixing + `dense_search_vector` + diagnostics. |

@@ -2,7 +2,7 @@
 
 Retrieval as a **tool-using agent loop**. Instead of a fixed retrieve-then-generate pipeline, the
 LLM holds four retrieval tools and drives its own investigation: think about what it knows, call
-one tool, read the observation, and repeat — until it can answer from evidence it actually
+one tool, read the observation, and repeat, until it can answer from evidence it actually
 retrieved. This is the ReAct pattern (Yao et al. 2023, [arXiv:2210.03629](https://arxiv.org/abs/2210.03629)).
 
 ```
@@ -20,7 +20,7 @@ the benchmark scores. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full data f
 ## Why this architecture exists
 
 Multi-hop questions ("who founded the company that makes the database Quorrel uses?") are
-unanswerable by any single query — no rephrasing of the question embeds near the *bridge* document
+unanswerable by any single query, no rephrasing of the question embeds near the *bridge* document
 (Talix → Brightfen), because the question doesn't mention it. The agent's follow-up searches are a
 mechanism that genuinely chains hops: search "Quorrel database" → read that Quorrel stores state in
 Talix → search/read Talix → discover Brightfen → answer.
@@ -34,15 +34,15 @@ and LLM across all 13 architectures):
 |---|---|---|---|---|
 | **agentic** | 0.97 | 100% | **83%** | **50%** |
 
-**Agentic was the top scorer** (tied with RAPTOR) — 83% overall and 50% multi-hop, while every
+**Agentic was the top scorer** (tied with RAPTOR), 83% overall and 50% multi-hop, while every
 query-transform method (multi-query, RAG-fusion, HyDE) scored **0% on multi-hop**. The reason is
 structural, not incidental: follow-up searches informed by intermediate reads are the one mechanism
-in the fixed-pipeline family's blind spot — rephrasing a question can never retrieve a bridge
+in the fixed-pipeline family's blind spot, rephrasing a question can never retrieve a bridge
 document the question doesn't mention.
 
-**What it costs — be honest about both sides:**
+**What it costs, be honest about both sides:**
 
-- **k× LLM calls per query.** Every step is one LLM round-trip; a 3-hop chain costs 3–5 calls
+- **k× LLM calls per query.** Every step is one LLM round-trip; a 3-hop chain costs 3 to 5 calls
   where naive RAG costs 1. Latency and spend scale with trajectory length.
 - **Non-determinism in trajectory length.** With a sampled LLM, the same question can take 2 steps
   on one run and 6 on the next (or stall and hit the budget). Fixed pipelines have fixed cost;
@@ -66,17 +66,17 @@ print(result.answer.text)                       # the agent's own final answer (
 ```
 
 `retrieve()` and `answer()` on the same question share **one** agent run (a small FIFO cache keyed
-by the question) — so benchmarking retrieval and then reading the answer doesn't pay for, or
+by the question), so benchmarking retrieval and then reading the answer doesn't pay for, or
 diverge across, two trajectories.
 
 ## Files
 
 | file | what it owns |
 |---|---|
-| `config.py` | frozen `Config` — step/output budgets, per-tool k, evidence ranking, cache size |
+| `config.py` | frozen `Config`, step/output budgets, per-tool k, evidence ranking, cache size |
 | `prompts.py` | system prompt + per-step decision prompt (the `Decide your next action` contract) |
 | `tools.py` | `Tool` / `ToolRegistry` + the four built-in corpus tools; errors become observations |
-| `evidence.py` | `EvidenceLog` — dedup'd evidence trail → frequency+recency ranked chunks/docs |
+| `evidence.py` | `EvidenceLog`, dedup'd evidence trail → frequency+recency ranked chunks/docs |
 | `agent.py` | the ReAct loop: structured decisions, duplicate guard, truncation, step spans |
 | `pipeline.py` | package contract (`retrieve`/`answer`), one-run cache, generator fallback |
 

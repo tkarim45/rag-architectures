@@ -1,4 +1,4 @@
-# rag_fusion — architecture
+# rag_fusion: architecture
 
 ## Data flow
 
@@ -44,7 +44,7 @@ rag_fusion.expand / rag_fusion.fanout / rag_fusion.fuse`).
 | **Duplicate queries double-vote** | Near-identical rankings inflate RRF scores of one neighborhood | Exact dedup in validator + cosine dedup at `dedup_threshold` |
 | **Consensus outvotes the specialist** | The one correct doc found by only one query falls below `final_k` | Lower `rrf_k` (sharpen heads) or raise `final_k` |
 | **Malformed LLM output** | JSON parse/shape failure | `StructuredCaller` repair-retry; then graceful fallback to the original question (`expansion_fallback: true` in diagnostics) |
-| **Multi-hop bridge docs** | 0% on multi-hop in this repo's benchmark | Not fixable by broadening — see README; use agentic/RAPTOR/graph architectures |
+| **Multi-hop bridge docs** | 0% on multi-hop in this repo's benchmark | Not fixable by broadening, see README; use agentic/RAPTOR/graph architectures |
 | **Cost/latency** | 1 LLM call + (N+1)× retrieval per question | Threaded fan-out hides retrieval latency; tune `n_queries` down |
 
 ## Tuning
@@ -57,7 +57,7 @@ rag_fusion.expand / rag_fusion.fanout / rag_fusion.fuse`).
 | `final_k` | 8 | Downstream reranker/long-context generator | Context budget is tight |
 | `dedup_threshold` | 0.92 | Too many good queries dropped | Rankings look near-identical (double voting) |
 | `max_workers` | 4 | Remote store with high RTT | Local index (parallelism buys nothing) |
-| `chunker` | sentence | — | — |
+| `chunker` | sentence |, |, |
 
 ## Citations
 
@@ -65,5 +65,5 @@ rag_fusion.expand / rag_fusion.fanout / rag_fusion.fuse`).
   arXiv:2402.03367.
 - Cormack, G. V., Clarke, C. L. A., & Buettcher, S. (2009). *Reciprocal Rank Fusion outperforms
   Condorcet and individual rank learning methods.* SIGIR '09.
-- Compare: LangChain `MultiQueryRetriever` lineage — the diversity-merge sibling implemented in
+- Compare: LangChain `MultiQueryRetriever` lineage, the diversity-merge sibling implemented in
   `multi_query/`.

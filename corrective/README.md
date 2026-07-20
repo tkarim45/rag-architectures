@@ -1,6 +1,6 @@
 # Corrective RAG (CRAG)
 
-Don't trust the first retrieval — **grade it, then act on the grade**.
+Don't trust the first retrieval, **grade it, then act on the grade**.
 
 Implementation of Yan et al. 2024, *Corrective Retrieval Augmented Generation*
 ([arXiv:2401.15884](https://arxiv.org/abs/2401.15884)), on the shared `core` framework. A
@@ -35,11 +35,11 @@ print(pipeline_result.answer.text)
 
 | Verdict | Action (`diagnostics["action"]`) | Behavior |
 |---|---|---|
-| CORRECT — ≥1 passage confidently correct | `refine` | Keep the non-incorrect passages; **knowledge refinement**: split each into sentence strips, grade each strip relevant/irrelevant (cheap YES/NO call), recompose the kept strips in order. |
-| INCORRECT — all passages confidently incorrect | `fallback` | Discard the retrieval. **Rewrite the query** into keyword form, then run a broadened hybrid sweep (dense ∪ BM25 over the rewrite, RRF-fused, wider `fallback_k`), then refine. |
-| AMBIGUOUS — anything else | `combine` | Hedge: RRF-fuse the kept original passages with the fallback results, take the top, refine. |
+| CORRECT, ≥1 passage confidently correct | `refine` | Keep the non-incorrect passages; **knowledge refinement**: split each into sentence strips, grade each strip relevant/irrelevant (cheap YES/NO call), recompose the kept strips in order. |
+| INCORRECT, all passages confidently incorrect | `fallback` | Discard the retrieval. **Rewrite the query** into keyword form, then run a broadened hybrid sweep (dense ∪ BM25 over the rewrite, RRF-fused, wider `fallback_k`), then refine. |
+| AMBIGUOUS, anything else | `combine` | Hedge: RRF-fuse the kept original passages with the fallback results, take the top, refine. |
 
-**Web-search stand-in.** The paper's INCORRECT action is web search — leave the failing source
+**Web-search stand-in.** The paper's INCORRECT action is web search, leave the failing source
 and look wider. This benchmark is a closed corpus, so the stand-in (implemented from `core`
 primitives only) is the broadened dense ∪ BM25 sweep over the rewritten query. Same intent,
 honest ceiling: it can only find what the corpus already contains.
@@ -60,7 +60,7 @@ grade, confidence), the aggregated `verdict`, the `action` taken, `rewritten_que
 ## Honest results
 
 In the last benchmark run, corrective scored **50% overall and 0% on multi-hop**. The grading
-step genuinely catches *bad* retrieval — that's where the precision wins come from — but the
+step genuinely catches *bad* retrieval, that's where the precision wins come from, but the
 corrective action is still a query rewrite, and a rewrite of the original question cannot
 surface a **bridge document** whose vocabulary appears in neither the question nor its rewrite.
 That is the same query-transform ceiling that multi-query / RAG-fusion / HyDE hit on this
@@ -71,7 +71,7 @@ iterative retrieval (GraphRAG, RAPTOR, agentic), not better phrasing of a single
 
 | File | Role |
 |---|---|
-| `config.py` | Frozen `Config` dataclass — every tunable, validated. |
+| `config.py` | Frozen `Config` dataclass, every tunable, validated. |
 | `prompts.py` | All three LLM prompts (grade / strip relevance / rewrite). |
 | `evaluator.py` | Retrieval evaluator: per-passage structured grading + verdict aggregation. |
 | `refiner.py` | Knowledge refinement: decompose-then-recompose strip filtering. |

@@ -1,4 +1,4 @@
-# naive — architecture
+# naive: architecture
 
 Single-shot dense retrieval, no online decisions. This is the reference data flow that every
 other package in the repo elaborates on.
@@ -35,7 +35,7 @@ flowchart TB
 | `NaiveConfig` | `config.py` | The four tunables (chunker, top_k, context budget); frozen so a benchmark run's settings are immutable facts |
 | `DenseRetriever` | `retriever.py` | Online half only: one `embed_query` + one ANN lookup; writes per-hit scores and latency into `diagnostics` |
 | `Pipeline` | `pipeline.py` | Wires retriever → `ContextBuilder` → `AnswerGenerator`; lazy index build when none injected; spans around every stage |
-| `CorpusIndex` (core) | injected | All offline artifacts — chunks, embeddings, vector store — shared across architectures |
+| `CorpusIndex` (core) | injected | All offline artifacts, chunks, embeddings, vector store, shared across architectures |
 
 ## Trace shape
 
@@ -54,12 +54,12 @@ flowchart TB
 
 | Knob | Effect |
 |---|---|
-| `top_k` ↑ | Recall ↑, precision ↓, context cost ↑. The central naive trade-off — there is no free k |
+| `top_k` ↑ | Recall ↑, precision ↓, context cost ↑. The central naive trade-off, there is no free k |
 | `chunker` | Granularity of the match unit. `sentence` = precise but context-poor hits; window/parent-child chunkers trade precision for richer display text |
 | `context_max_passages` | How much of the retrieval the generator actually sees; keep = `top_k` so retrieval metrics and generation input coincide |
 | `context_max_chars` | Safety budget against oversized chunks; if `diagnostics["context_truncated"]` is true, this (not retrieval) is eating your recall |
 
 ## Reference
 
-Lewis et al., *Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks*, NeurIPS 2020 —
+Lewis et al., *Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks*, NeurIPS 2020, 
 the retrieve-then-generate loop this package implements in its simplest form.

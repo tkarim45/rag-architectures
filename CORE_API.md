@@ -1,7 +1,7 @@
 # Core framework contract (for architecture packages)
 
 Every architecture package builds on `core/` and **only** `core/`. No architecture package may
-import another architecture package — each one implements its full retrieval strategy from core
+import another architecture package, each one implements its full retrieval strategy from core
 primitives so the packages stay independently readable, testable, and deletable.
 
 ## The runtime (dependency injection)
@@ -24,10 +24,10 @@ Chunker names: `whole | sentence | fixed | sentence_window | parent_child | cont
 ## Domain types (core.types)
 
 - `Document(doc_id, title, text, metadata)`
-- `Chunk(chunk_id, doc_id, index_text, display_text, metadata)` — chunk ids are `"{doc_id}::spec"`
+- `Chunk(chunk_id, doc_id, index_text, display_text, metadata)`, chunk ids are `"{doc_id}::spec"`
 - `Query(text, top_k, variants, metadata)`
-- `ScoredChunk(chunk, score, retriever)` — has `.chunk_id`, `.doc_id`
-- `RetrievalResult(query, chunks: list[ScoredChunk], diagnostics: dict)` — `.doc_ids` = ranked
+- `ScoredChunk(chunk, score, retriever)`, has `.chunk_id`, `.doc_id`
+- `RetrievalResult(query, chunks: list[ScoredChunk], diagnostics: dict)`, `.doc_ids` = ranked
   unique doc ids (what metrics score); put your architecture's story (routes, grades, hops,
   generated queries) into `diagnostics`
 - `ContextBlock(text, chunk_ids, doc_ids, truncated)`

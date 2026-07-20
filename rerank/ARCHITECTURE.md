@@ -1,4 +1,4 @@
-# Rerank RAG — architecture
+# Rerank RAG: architecture
 
 Two-stage funnel: cheap high-recall candidate generation, then expensive high-precision
 cross-encoder reranking over only those candidates.
@@ -30,7 +30,7 @@ flowchart TB
 ```
 
 The funnel narrows `whole corpus → candidate_k (≈20-40) → final_k (5)`: recall is bought cheaply
-at the top, precision expensively at the bottom — and only over what the top surfaced.
+at the top, precision expensively at the bottom, and only over what the top surfaced.
 
 ## Components
 
@@ -45,10 +45,10 @@ at the top, precision expensively at the bottom — and only over what the top s
 
 ## Diagnostics (in `RetrievalResult.diagnostics`)
 
-- `candidates` — total / dense / sparse / overlap counts: how wide stage 1 cast
-- `rank_movement` — per final chunk: `stage1_rank → final_rank` and the delta; all-zero means the
+- `candidates`, total / dense / sparse / overlap counts: how wide stage 1 cast
+- `rank_movement`, per final chunk: `stage1_rank → final_rank` and the delta; all-zero means the
   reranker changed nothing and is pure latency for this workload
-- `top1_from_stage1_rank` — how deep the winner was hiding; the reranker's headline win, and an
+- `top1_from_stage1_rank`, how deep the winner was hiding; the reranker's headline win, and an
   early warning that `candidate_k` must stay at least that deep
 - `dropped_by_threshold`, `reranker` (name/model), `score_threshold`
 
@@ -56,10 +56,10 @@ at the top, precision expensively at the bottom — and only over what the top s
 
 | Failure | Symptom | Cause / fix |
 |---|---|---|
-| **`candidate_k` too small** (the classic) | recall@k identical to naive; gold doc absent no matter the reranker | Stage 2 only reorders — it cannot recover what stage 1 missed. Raise `candidate_k`; watch `top1_from_stage1_rank` creeping toward `candidate_k` |
-| Exact-token queries miss | ids/names absent from candidates | Bi-encoder vocabulary gap — set `use_sparse_candidates=True` to union BM25 in |
+| **`candidate_k` too small** (the classic) | recall@k identical to naive; gold doc absent no matter the reranker | Stage 2 only reorders, it cannot recover what stage 1 missed. Raise `candidate_k`; watch `top1_from_stage1_rank` creeping toward `candidate_k` |
+| Exact-token queries miss | ids/names absent from candidates | Bi-encoder vocabulary gap, set `use_sparse_candidates=True` to union BM25 in |
 | Latency blowup | p95 grows linearly with `candidate_k` | Cross-encoder is O(candidates) forward passes; lower `candidate_k`, raise `batch_size`, or use a smaller model |
-| Over-aggressive threshold | empty/short results, generator abstains | Cross-encoder logits are model-specific and uncalibrated — set `score_threshold` only after inspecting the score distribution |
+| Over-aggressive threshold | empty/short results, generator abstains | Cross-encoder logits are model-specific and uncalibrated, set `score_threshold` only after inspecting the score distribution |
 | Domain shift | reranker demotes correct passages | MS MARCO training ≠ your domain; swap `cross_encoder_model` or fine-tune |
 | Zero rank movement | rerank ≈ naive at extra cost | Stage 1 already orders well on this corpus; rerank isn't buying anything here |
 
@@ -76,10 +76,10 @@ at the top, precision expensively at the bottom — and only over what the top s
 
 ## Citations
 
-- Nogueira, R., & Cho, K. (2019). **Passage Re-ranking with BERT.** *arXiv:1901.04085.* — the
+- Nogueira, R., & Cho, K. (2019). **Passage Re-ranking with BERT.** *arXiv:1901.04085.*, the
   retrieve-then-rerank funnel with a cross-encoder stage 2.
 - Reimers, N., & Gurevych, I. (2019). **Sentence-BERT: Sentence Embeddings using Siamese
-  BERT-Networks.** *EMNLP 2019.* — the bi-encoder/cross-encoder cost-quality distinction stage 1
+  BERT-Networks.** *EMNLP 2019.*, the bi-encoder/cross-encoder cost-quality distinction stage 1
   is built on.
 - Bajaj, P., et al. (2016). **MS MARCO: A Human Generated MAchine Reading COmprehension
-  Dataset.** — the training data behind the default `cross-encoder/ms-marco-MiniLM-L-6-v2`.
+  Dataset.**, the training data behind the default `cross-encoder/ms-marco-MiniLM-L-6-v2`.

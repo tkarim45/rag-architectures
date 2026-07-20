@@ -1,7 +1,7 @@
 # Chunking-strategy RAG
 
 **Retrieval quality is often decided at index time, not query time.** This package holds the
-online path constant — plain dense retrieval, identical to naive RAG — and varies only how the
+online path constant, plain dense retrieval, identical to naive RAG, and varies only how the
 corpus was chunked when the index was built. Same retriever, same corpus, same queries; the only
 moving part is the index-time strategy. Whatever swings, chunking did it.
 
@@ -9,7 +9,7 @@ moving part is the index-time strategy. Whatever swings, chunking did it.
 
 A core `Chunk` carries two texts: `index_text` (what gets embedded / BM25-indexed → match
 precision) and `display_text` (what the generator reads on a hit → answer context). Naive
-chunking sets them equal. The three benchmarked strategies drive them apart — **match small,
+chunking sets them equal. The three benchmarked strategies drive them apart, **match small,
 return big**:
 
 | Strategy | Indexed | Returned | The bet |
@@ -19,7 +19,7 @@ return big**:
 | `contextual` | LLM context line + sentence | the bare sentence | disambiguate the match itself |
 
 `STRATEGY_PROFILES` in [`strategies.py`](strategies.py) profiles all six core strategies
-(including the coupled baselines `whole`, `sentence`, `fixed`) — what each indexes, what it
+(including the coupled baselines `whole`, `sentence`, `fixed`), what each indexes, what it
 returns, when it wins, when it loses. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the data flow,
 failure modes, and tuning guide.
 
@@ -50,7 +50,7 @@ strategy shares identical embedder/LLM wiring; standalone usage builds lazily vi
 ## What the diagnostics show
 
 `RetrievalResult.diagnostics` records the strategy name, index granularity (`n_index_chunks`
-over `n_documents`), and — for the top hits — the matched `index_text` beside the returned
+over `n_documents`), and, for the top hits, the matched `index_text` beside the returned
 `display_text` with their size ratio (`expansion`: 1.0 = coupled, ≫1 = match-small/return-big).
 That makes each strategy's mechanics inspectable per query, not just its aggregate score.
 
@@ -59,6 +59,6 @@ That makes each strategy's mechanics inspectable per query, not just its aggrega
 | File | Role |
 |---|---|
 | `config.py` | Frozen `Config`: query-path knobs (held constant) + per-strategy build knobs |
-| `strategies.py` | `StrategyProfile` registry — the design card for all six core strategies |
+| `strategies.py` | `StrategyProfile` registry, the design card for all six core strategies |
 | `retriever.py` | Plain dense retrieval + match-vs-display diagnostics |
 | `pipeline.py` | `Pipeline`: lazy/injected index, `retrieve()` (benchmark) and `answer()` |

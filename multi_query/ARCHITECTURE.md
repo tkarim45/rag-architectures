@@ -1,4 +1,4 @@
-# multi_query — architecture
+# multi_query: architecture
 
 ## Data flow
 
@@ -41,9 +41,9 @@ multi_query.expand / multi_query.fanout`).
 | Failure | Symptom | Mitigation here |
 |---|---|---|
 | **Expansion drift** | Variants wander off-intent; off-topic chunks crowd the pool | Prompt pins intent ("add no new constraints, drop none"); original question always searched and ranked first in the interleave; `final_k` caps damage |
-| **Redundant variants** | N searches retrieve one neighborhood — pure cost, no recall | Exact dedup in validator + cosine dedup at `dedup_threshold` |
+| **Redundant variants** | N searches retrieve one neighborhood, pure cost, no recall | Exact dedup in validator + cosine dedup at `dedup_threshold` |
 | **Malformed LLM output** | JSON parse/shape failure | `StructuredCaller` repair-retry; then graceful fallback to the original question (`expansion_fallback: true` in diagnostics) |
-| **Multi-hop bridge docs** | 0% on multi-hop in this repo's benchmark | Not fixable by rephrasing — see README; use agentic/RAPTOR/graph architectures |
+| **Multi-hop bridge docs** | 0% on multi-hop in this repo's benchmark | Not fixable by rephrasing, see README; use agentic/RAPTOR/graph architectures |
 | **Cost/latency** | 1 LLM call + (N+1)× retrieval per question | Threaded fan-out hides retrieval latency; tune `n_queries` down |
 
 ## Tuning
@@ -55,11 +55,11 @@ multi_query.expand / multi_query.fanout`).
 | `final_k` | 8 | Downstream reranker/long-context generator | Context budget is tight |
 | `dedup_threshold` | 0.92 | Too many good variants dropped | Variants retrieve identical neighborhoods |
 | `max_workers` | 4 | Remote store with high RTT | Local index (parallelism buys nothing) |
-| `chunker` | sentence | — | — |
+| `chunker` | sentence |, |, |
 
 ## Citations
 
-- LangChain `MultiQueryRetriever` — the lineage of this pattern
+- LangChain `MultiQueryRetriever`, the lineage of this pattern
   (https://python.langchain.com/docs/how_to/MultiQueryRetriever/).
-- Compare: Rackauckas, Z. (2024). *RAG-Fusion: a New Take on Retrieval-Augmented Generation* —
+- Compare: Rackauckas, Z. (2024). *RAG-Fusion: a New Take on Retrieval-Augmented Generation*, 
   the consensus-scored sibling implemented in `rag_fusion/`.

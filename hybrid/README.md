@@ -1,7 +1,7 @@
 # Hybrid RAG (dense + BM25, fused)
 
 Dense vector search and BM25 keyword search run **in parallel over the same chunks**, and their
-rankings are fused into one list — Reciprocal Rank Fusion (RRF) by default, weighted score fusion
+rankings are fused into one list. Reciprocal Rank Fusion (RRF) by default, weighted score fusion
 by config.
 
 ## Why hybrid
@@ -21,11 +21,11 @@ both agree on.
 
 BM25 scores are unbounded term-frequency sums; cosine similarities live in [-1, 1]. The two live on
 **incomparable scales**, so any direct score arithmetic silently lets one branch dominate. RRF
-(Cormack et al. 2009) is rank-based and therefore scale-free — it only asks "where did each branch
+(Cormack et al. 2009) is rank-based and therefore scale-free, it only asks "where did each branch
 place this chunk?", scoring `Σ 1/(rrf_k + rank)`. One hyperparameter (`rrf_k=60`, the canonical
 constant), no normalization to tune, robust out of the box.
 
-**When weighted fusion wins:** if your branch scores are calibrated (or you normalize them —
+**When weighted fusion wins:** if your branch scores are calibrated (or you normalize them, 
 `minmax`/`zscore` supported) and you have validation data to tune the `(dense, sparse)` weights,
 weighted fusion preserves score-*magnitude* information RRF throws away and can edge it out. It is
 the tuned option, not the safe one.
