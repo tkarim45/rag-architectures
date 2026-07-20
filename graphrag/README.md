@@ -27,7 +27,7 @@ from graphrag import Config, Pipeline, build_graph
 
 runtime = Runtime.from_env()
 
-# offline artifact — build once, share across pipelines (the benchmark does exactly this)
+# offline artifact, build once, share across pipelines (the benchmark does exactly this)
 graph = build_graph(runtime, runtime.corpus)
 
 pipeline = Pipeline(runtime, Config(mode="auto"), graph=graph)

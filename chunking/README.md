@@ -31,7 +31,7 @@ from chunking import Config, Pipeline, STRATEGIES
 
 runtime = Runtime.from_env()          # or Runtime.for_testing() for offline
 
-# one pipeline per strategy — the benchmark's loop
+# one pipeline per strategy, the benchmark's loop
 for strategy in STRATEGIES:           # ("sentence_window", "parent_child", "contextual")
     pipe = Pipeline(runtime, strategy=strategy)
     retrieval, context = pipe.retrieve("Who founded Veyra Systems?")
