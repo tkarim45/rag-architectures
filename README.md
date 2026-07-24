@@ -15,6 +15,13 @@ rag-bench --methods graphrag,agentic --limit 4 -v
 pytest -q                     # 43 offline tests — no keys, no network, no model downloads
 ```
 
+
+## Architecture
+
+![architecture](docs/assets/architecture.png)
+
+*Interactive/exportable version: [`docs/assets/architecture.html`](docs/assets/architecture.html).*
+
 ## The architectures
 
 Each package has its own `README.md` (usage + honest findings) and `ARCHITECTURE.md` (mermaid data
