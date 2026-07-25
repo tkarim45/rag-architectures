@@ -185,85 +185,93 @@
     <div class="header"><div class="header-row"><div class="pulse-dot"></div>
       <h1>RAG Architectures — Architecture</h1>
       <div class="toolbar"><div class="toolbar-actions"><button onclick="copyAsImage(this)">📋 Copy</button><button onclick="downloadPNG(this)">🖼️ PNG</button><button onclick="downloadPDF(this)">📄 PDF</button></div><button class="toolbar-toggle" onclick="this.parentElement.classList.toggle('expanded')">⋯</button></div>
-    </div><p class="subtitle">13 RAG architectures benchmarked on one corpus and one labeled eval — each a production-style package, scored on retrieval recall + LLM-judged accuracy.</p></div>
-    <div class="diagram-container"><svg viewBox="0 0 1280 600">
+    </div><p class="subtitle">13 RAG architectures, one corpus, one labeled eval set, engineered as a real framework and measured side by side. Each is a self-contained production-style package on a shared core, so score differences are architecture differences.</p></div>
+    <div class="diagram-container"><svg viewBox="0 0 1440 755">
 <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/></marker><marker id="loop" markerWidth="11" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 11 4, 0 8" fill="#22d3ee"/></marker><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/></pattern></defs>
-<rect width="1280" height="600" fill="url(#grid)"/>
-<rect x="24" y="150" width="300" height="300" rx="12" fill="rgba(148,163,184,0.04)" stroke="#94a3b8" stroke-width="1" stroke-dasharray="8,4"/>
-<text x="38" y="168" fill="#94a3b8" font-size="10" font-weight="600">SHARED CORPUS + EVAL</text>
-<rect x="340" y="70" width="610" height="468" rx="12" fill="rgba(167,139,250,0.04)" stroke="#a78bfa" stroke-width="1" stroke-dasharray="8,4"/>
-<text x="354" y="88" fill="#a78bfa" font-size="10" font-weight="600">13 RAG ARCHITECTURES  ·  each a prod-style package</text>
-<rect x="966" y="150" width="290" height="300" rx="12" fill="rgba(251,113,133,0.04)" stroke="#fb7185" stroke-width="1" stroke-dasharray="8,4"/>
-<text x="980" y="168" fill="#fb7185" font-size="10" font-weight="600">SCORED ON ONE HARNESS</text>
-<line x1="215" y1="259" x2="250" y2="259" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<path d="M 378 228 C 438 228, 438 157, 498 157" fill="none" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="420" y1="259" x2="455" y2="259" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<path d="M 378 290 C 438 290, 438 422, 498 422" fill="none" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<path d="M 625 126 C 664 126, 664 228, 702 228" fill="none" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="625" y1="259" x2="660" y2="259" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<path d="M 745 157 C 745 157, 745 228, 745 228" fill="none" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<path d="M 625 391 C 664 391, 664 290, 702 290" fill="none" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="830" y1="259" x2="867" y2="259" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<text x="848" y="254" fill="#94a3b8" font-size="8.5" text-anchor="middle">answer</text>
-<path d="M 215 391 C 562 391, 562 290, 910 290" fill="none" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<text x="562" y="336" fill="#94a3b8" font-size="8.5" text-anchor="middle">gold</text>
-<path d="M 952 290 C 952 290, 952 360, 952 360" fill="none" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<rect x="45" y="228" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="45" y="228" width="170" height="62" rx="7" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
-<text x="130" y="248" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Shared Corpus</text>
-<text x="130" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">one dataset</text>
-<rect x="45" y="360" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="45" y="360" width="170" height="62" rx="7" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-<text x="130" y="380" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Labeled Eval</text>
-<text x="130" y="396" fill="#94a3b8" font-size="9" text-anchor="middle">gold Q→relevant</text>
-<rect x="250" y="228" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="250" y="228" width="170" height="62" rx="7" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
-<text x="335" y="248" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Shared Harness</text>
-<text x="335" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">FAISS · BM25 · rerank</text>
-<rect x="455" y="95" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="455" y="95" width="170" height="62" rx="7" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-<text x="540" y="115" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Retrieval Variants</text>
-<text x="540" y="131" fill="#94a3b8" font-size="9" text-anchor="middle">naive/hybrid/rerank</text>
-<rect x="455" y="228" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="455" y="228" width="170" height="62" rx="7" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-<text x="540" y="248" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Query Transforms</text>
-<text x="540" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">multi-query · fusion · HyDE</text>
-<rect x="455" y="360" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="455" y="360" width="170" height="62" rx="7" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-<text x="540" y="380" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Structural</text>
-<text x="540" y="396" fill="#94a3b8" font-size="9" text-anchor="middle">GraphRAG · RAPTOR</text>
-<rect x="660" y="95" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="660" y="95" width="170" height="62" rx="7" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-<text x="745" y="115" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Iterative</text>
-<text x="745" y="131" fill="#94a3b8" font-size="9" text-anchor="middle">corrective/adaptive/agentic</text>
-<rect x="660" y="228" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="660" y="228" width="170" height="62" rx="7" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
-<text x="745" y="248" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Generate</text>
-<text x="745" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">Claude · AWS Bedrock</text>
-<rect x="867" y="228" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="867" y="228" width="170" height="62" rx="7" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
-<text x="952" y="248" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Score</text>
-<text x="952" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">recall + LLM-judge</text>
-<rect x="867" y="360" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="867" y="360" width="170" height="62" rx="7" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
-<text x="952" y="380" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Leaderboard</text>
-<text x="952" y="396" fill="#94a3b8" font-size="9" text-anchor="middle">13 architectures ranked</text>
-<text x="40" y="572" fill="#fff" font-size="10" font-weight="600">Legend</text>
-<rect x="106" y="563" width="15" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
-<text x="126" y="572" fill="#94a3b8" font-size="8.5">Frontend/UI</text>
-<rect x="223" y="563" width="15" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
-<text x="243" y="572" fill="#94a3b8" font-size="8.5">Backend</text>
-<rect x="312" y="563" width="15" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
-<text x="332" y="572" fill="#94a3b8" font-size="8.5">Data/Index</text>
-<rect x="422" y="563" width="15" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
-<text x="442" y="572" fill="#94a3b8" font-size="8.5">Model/Cloud</text>
-<rect x="539" y="563" width="15" height="10" rx="2" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1"/>
-<text x="559" y="572" fill="#94a3b8" font-size="8.5">Safety/Gate</text>
-<rect x="656" y="563" width="15" height="10" rx="2" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1"/>
-<text x="676" y="572" fill="#94a3b8" font-size="8.5">Pipeline</text>
+<rect width="1440" height="755" fill="url(#grid)"/>
+<rect x="199" y="59" width="1056" height="158" rx="12" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="1" stroke-dasharray="8,4"/>
+<text x="213" y="78" fill="#34d399" font-size="10" font-weight="600">① ONE SHARED CORE, ONE EVAL</text>
+<rect x="79" y="299" width="1282" height="158" rx="12" fill="rgba(167,139,250,0.04)" stroke="#a78bfa" stroke-width="1" stroke-dasharray="8,4"/>
+<text x="93" y="318" fill="#a78bfa" font-size="10" font-weight="600">② 13 PACKAGES</text>
+<rect x="332" y="529" width="779" height="158" rx="12" fill="rgba(34,211,238,0.04)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="8,4"/>
+<text x="346" y="548" fill="#22d3ee" font-size="10" font-weight="600">③ MULTI-HOP</text>
+<line x1="375" y1="150" x2="623" y2="150" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="499" y="143" fill="#cbd5e1" font-size="8.5" text-anchor="middle">same docs + questions</text>
+<line x1="817" y1="150" x2="1051" y2="150" stroke="#fb7185" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="934" y="143" fill="#cbd5e1" font-size="8.5" text-anchor="middle">one prompt, one judge</text>
+<line x1="672" y1="191" x2="180" y2="349" stroke="#a78bfa" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<line x1="672" y1="191" x2="450" y2="349" stroke="#a78bfa" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<line x1="720" y1="191" x2="720" y2="356" stroke="#a78bfa" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<line x1="768" y1="191" x2="990" y2="356" stroke="#a78bfa" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<line x1="768" y1="191" x2="1260" y2="349" stroke="#a78bfa" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<line x1="450" y1="431" x2="450" y2="579" stroke="#22d3ee" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="494" y="508" fill="#cbd5e1" font-size="8.5" text-anchor="middle">0% multi-hop</text>
+<line x1="990" y1="424" x2="990" y2="579" stroke="#22d3ee" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="1028" y="504" fill="#cbd5e1" font-size="8.5" text-anchor="middle">raptor 83%</text>
+<rect x="225" y="109" width="150" height="82" rx="7" fill="#0f172a"/>
+<rect x="225" y="109" width="150" height="82" rx="7" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="300" y="131" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">14 Fictional Docs</text>
+<text x="300" y="149" fill="#94a3b8" font-size="9.0" text-anchor="middle">12 labeled questions</text>
+<text x="300" y="164" fill="#94a3b8" font-size="9.0" text-anchor="middle">single- + multi-hop</text>
+<rect x="623" y="109" width="194" height="82" rx="7" fill="#0f172a"/>
+<rect x="623" y="109" width="194" height="82" rx="7" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="720" y="131" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Shared Core</text>
+<text x="720" y="149" fill="#94a3b8" font-size="9.0" text-anchor="middle">typed models · pluggable LLM</text>
+<text x="720" y="164" fill="#94a3b8" font-size="9.0" text-anchor="middle">vector store · tracing · cache</text>
+<rect x="1051" y="109" width="178" height="82" rx="7" fill="#0f172a"/>
+<rect x="1051" y="109" width="178" height="82" rx="7" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+<text x="1140" y="131" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Fairness Contract</text>
+<text x="1140" y="149" fill="#94a3b8" font-size="9.0" text-anchor="middle">one generator prompt</text>
+<text x="1140" y="164" fill="#94a3b8" font-size="9.0" text-anchor="middle">one judge, shared artifacts</text>
+<rect x="105" y="349" width="150" height="82" rx="7" fill="#0f172a"/>
+<rect x="105" y="349" width="150" height="82" rx="7" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="180" y="371" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Retrieval (4)</text>
+<text x="180" y="389" fill="#94a3b8" font-size="9.0" text-anchor="middle">naive · sparse</text>
+<text x="180" y="404" fill="#94a3b8" font-size="9.0" text-anchor="middle">hybrid · rerank</text>
+<rect x="368" y="349" width="163" height="82" rx="7" fill="#0f172a"/>
+<rect x="368" y="349" width="163" height="82" rx="7" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="450" y="371" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Query Transform (3)</text>
+<text x="450" y="389" fill="#94a3b8" font-size="9.0" text-anchor="middle">multi_query · rag_fusion</text>
+<text x="450" y="404" fill="#94a3b8" font-size="9.0" text-anchor="middle">hyde</text>
+<rect x="645" y="356" width="150" height="67" rx="7" fill="#0f172a"/>
+<rect x="645" y="356" width="150" height="67" rx="7" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="720" y="378" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Indexing (1)</text>
+<text x="720" y="396" fill="#94a3b8" font-size="9.0" text-anchor="middle">chunking strategies</text>
+<rect x="915" y="356" width="150" height="67" rx="7" fill="#0f172a"/>
+<rect x="915" y="356" width="150" height="67" rx="7" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="990" y="378" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Structural (2)</text>
+<text x="990" y="396" fill="#94a3b8" font-size="9.0" text-anchor="middle">graphrag · raptor</text>
+<rect x="1185" y="349" width="150" height="82" rx="7" fill="#0f172a"/>
+<rect x="1185" y="349" width="150" height="82" rx="7" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="1260" y="371" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Control Flow (3)</text>
+<text x="1260" y="389" fill="#94a3b8" font-size="9.0" text-anchor="middle">corrective · adaptive</text>
+<text x="1260" y="404" fill="#94a3b8" font-size="9.0" text-anchor="middle">agentic</text>
+<rect x="358" y="579" width="184" height="82" rx="7" fill="#0f172a"/>
+<rect x="358" y="579" width="184" height="82" rx="7" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="450" y="601" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Rephrasing ≠ multi-hop</text>
+<text x="450" y="619" fill="#94a3b8" font-size="9.0" text-anchor="middle">query-transform: 0%</text>
+<text x="450" y="634" fill="#94a3b8" font-size="9.0" text-anchor="middle">naive: 0%</text>
+<rect x="895" y="579" width="191" height="82" rx="7" fill="#0f172a"/>
+<rect x="895" y="579" width="191" height="82" rx="7" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="990" y="601" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Winners add a mechanism</text>
+<text x="990" y="619" fill="#94a3b8" font-size="9.0" text-anchor="middle">agentic / raptor 83% · 50%</text>
+<text x="990" y="634" fill="#94a3b8" font-size="9.0" text-anchor="middle">graphrag 67% · 25%</text>
+<text x="40" y="727" fill="#fff" font-size="10" font-weight="600">Legend</text>
+<rect x="106" y="718" width="15" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+<text x="126" y="727" fill="#94a3b8" font-size="8.5">Frontend/UI</text>
+<rect x="210.1" y="718" width="15" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+<text x="230.1" y="727" fill="#94a3b8" font-size="8.5">Backend</text>
+<rect x="293.79999999999995" y="718" width="15" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+<text x="313.79999999999995" y="727" fill="#94a3b8" font-size="8.5">Data/Index</text>
+<rect x="392.79999999999995" y="718" width="15" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+<text x="412.79999999999995" y="727" fill="#94a3b8" font-size="8.5">Model/Cloud</text>
+<rect x="496.9" y="718" width="15" height="10" rx="2" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1"/>
+<text x="516.9" y="727" fill="#94a3b8" font-size="8.5">Eval/Gate</text>
+<rect x="590.8" y="718" width="15" height="10" rx="2" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1"/>
+<text x="610.8" y="727" fill="#94a3b8" font-size="8.5">External</text>
 </svg></div>
-    <div class="cards"><div class="card"><div class="card-header"><div class="card-dot violet"></div><h3>13 architectures</h3></div><ul><li>• retrieval: naive/sparse/hybrid/rerank</li><li>• query transforms: multi-query/RAG-fusion/HyDE</li><li>• structural: GraphRAG, RAPTOR · iterative: corrective/adaptive/agentic</li></ul></div><div class="card"><div class="card-header"><div class="card-dot emerald"></div><h3>One harness</h3></div><ul><li>• shared corpus + labeled eval set</li><li>• FAISS + rank-bm25 + cross-encoder</li><li>• real Claude on AWS Bedrock for generation</li></ul></div><div class="card"><div class="card-header"><div class="card-dot rose"></div><h3>Honest ranking</h3></div><ul><li>• retrieval recall + LLM-judged answer accuracy</li><li>• finding: query-transform RAG scores 0% on multi-hop</li><li>• structural/iterative methods gain where it counts</li></ul></div></div>
-    <p class="footer">rag-architectures · 13 architectures · sentence-transformers · FAISS · rank-bm25 · networkx · Claude/AWS Bedrock</p>
+    <div class="cards"><div class="card"><div class="card-header"><div class="card-dot emerald"></div><h3>One core, so the comparison is honest</h3></div><ul><li>• typed domain models, pluggable LLM / embedding / vector-store backends, retry and caching, span tracing, structured-output repair</li><li>• every architecture runs over the same documents, the same embeddings and the same LLM under a strict fairness contract: one shared generator prompt, one shared judge, shared offline artifacts</li><li>• the eval is a fully FICTIONAL interlinked knowledge base (14 docs about invented companies and products) plus 12 labeled questions with gold doc ids</li><li>• fictional on purpose, so a method only scores if it actually retrieves the right docs: this measures RAG, not memorization</li><li>• 43 offline tests run with no keys, no network and no model downloads</li></ul></div><div class="card"><div class="card-header"><div class="card-dot violet"></div><h3>Five families, thirteen packages, each grounded in its paper</h3></div><ul><li>• retrieval: naive dense top-k, BM25 sparse, hybrid with RRF or weighted fusion, cross-encoder rerank</li><li>• query transform: multi-query rephrasing, RAG-fusion, HyDE</li><li>• indexing: sentence-window, parent-child and contextual chunking</li><li>• structural: GraphRAG with Louvain communities, RAPTOR with recursive summaries</li><li>• control flow: corrective (CRAG), adaptive complexity routing, agentic ReAct loop</li></ul></div><div class="card"><div class="card-header"><div class="card-dot cyan"></div><h3>Multi-hop is the discriminator, and rephrasing does not solve it</h3></div><ul><li>• the query-transform methods and the naive baseline all scored 0% on multi-hop: no rephrasing of "who founded the company behind X" resembles the founder document</li><li>• the winners add a second MECHANISM rather than more lexical breadth: follow-up searches (agentic 83%/50%), cross-doc summary nodes (raptor 83%/50%), or more context per hit (hybrid with parent-child chunking 75%/50%)</li><li>• GraphRAG underperformed its promise at this scale (67%/25%) because traversal reaches bridge docs but extraction quality and a 2-hop limit gate it: graph quality IS extraction quality</li><li>• corrective RAG helps precision, not hops (50%/0%): grading catches bad retrieval, but a rewrite still cannot reach a bridge doc</li><li>• caveat: 12 questions plus an LLM judge means one flipped question moves a method about 8 points, so the robust signal is structural rather than the exact ranking</li></ul></div></div>
+    <p class="footer">rag-architectures · sentence-transformers · FAISS · rank-bm25 · networkx · Claude on AWS Bedrock · 43 offline tests</p>
   </div>
 <script>
     async function copyAsImage(btn) {
